@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AI Weather Prediction</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:ital,wght@0,400;0,500;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+  <!-- ✅ FIXED CSS -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+<!-- ── BACKGROUND GRID ── -->
+<div class="bg-grid"></div>
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+
+<!-- ── HEADER ── -->
+<header>
+  <div class="header-inner">
+    <div class="logo">
+      <span class="logo-icon">⛅</span>
+      <div>
+        <div class="logo-title">WeatherAI</div>
+        <div class="logo-sub">Linear Regression Forecaster</div>
+      </div>
+    </div>
+    <div class="header-badges">
+      <span class="badge badge-green" id="statusBadge">● Connecting...</span>
+      <span class="badge badge-blue">Flask + NumPy</span>
+    </div>
+  </div>
+</header>
+
+<!-- ── MAIN ── -->
+<main>
+
+  <!-- METRICS ROW -->
+  <section class="metrics-row" id="metricsRow">
+    <div class="metric-card" style="--delay:0s">
+      <div class="metric-icon">📐</div>
+      <div class="metric-label">Slope (m)</div>
+      <div class="metric-value" id="mSlope">—</div>
+      <div class="metric-sub">°C per day</div>
+    </div>
+    <div class="metric-card" style="--delay:.08s">
+      <div class="metric-icon">📍</div>
+      <div class="metric-label">Intercept (b)</div>
+      <div class="metric-value" id="mIntercept">—</div>
+      <div class="metric-sub">base temperature</div>
+    </div>
+    <div class="metric-card" style="--delay:.16s">
+      <div class="metric-icon">🎯</div>
+      <div class="metric-label">R² Score</div>
+      <div class="metric-value" id="mR2">—</div>
+      <div class="metric-sub">model accuracy</div>
+    </div>
+    <div class="metric-card" style="--delay:.24s">
+      <div class="metric-icon">📏</div>
+      <div class="metric-label">RMSE</div>
+      <div class="metric-value" id="mRmse">—</div>
+      <div class="metric-sub">avg. error °C</div>
+    </div>
+  </section>
+
+  <!-- EQUATION BANNER -->
+  <div class="equation-banner" id="equationBanner">
+    <span class="eq-label">Regression Equation</span>
+    <span class="eq-formula" id="eqFormula">Loading model...</span>
+  </div>
+
+  <!-- GRID: CHART + PREDICTOR -->
+  <div class="main-grid">
+
+    <!-- CHART PANEL -->
+    <div class="panel chart-panel" style="--delay:.3s">
+      <div class="panel-header">
+        <div class="panel-title">Training Data — Observed vs Predicted</div>
+        <div class="panel-badge">15 days</div>
+      </div>
+      <div class="chart-wrap">
+        <canvas id="mainChart" role="img" aria-label="Line chart showing observed vs predicted temperatures over 15 days"></canvas>
+      </div>
+    </div>
+
+    <!-- RIGHT COLUMN -->
+    <div class="right-col">
+
+      <!-- PREDICTOR CARD -->
+      <div class="panel predictor-panel" style="--delay:.38s">
+        <div class="panel-header">
+          <div class="panel-title">🔮 Predict Temperature</div>
+        </div>
+        <div class="predictor-body">
+          <label class="input-label">Enter Day Number</label>
+          <div class="input-row">
+            <input type="number" id="dayInput" value="16" min="1" max="365" placeholder="e.g. 16"/>
+            <button id="predictBtn" onclick="predictSingle()">Predict</button>
+          </div>
+          <div class="predict-result" id="predictResult">
+            <div class="result-temp" id="resultTemp">—</div>
+            <div class="result-meta" id="resultMeta">Enter a day and click Predict</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- FUTURE FORECAST -->
+      <div class="panel forecast-panel" style="--delay:.46s">
+        <div class="panel-header">
+          <div class="panel-title">📅 5-Day Forecast</div>
+          <div class="panel-badge" id="forecastRange">Day 16–20</div>
+        </div>
+        <div id="forecastList" class="forecast-list">
+          <div class="forecast-loading">Loading forecast...</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- DATA TABLE -->
+  <div class="panel table-panel" style="--delay:.54s">
+    <div class="panel-header">
+      <div class="panel-title">📊 Training Dataset</div>
+      <div class="panel-badge">API: /api/training-data</div>
+    </div>
+    <div class="table-wrap">
+      <table id="dataTable">
+        <thead>
+          <tr>
+            <th>Day</th>
+            <th>Observed (°C)</th>
+            <th>Predicted (°C)</th>
+            <th>Error (°C)</th>
+            <th>Accuracy</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody">
+          <tr><td colspan="5" class="tbl-loading">Fetching data from backend...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- API DOCS -->
+  <div class="panel api-panel" style="--delay:.62s">
+    <div class="panel-header">
+      <div class="panel-title">🔌 API Endpoints</div>
+      <div class="panel-badge">Flask Backend</div>
+    </div>
+    <div class="api-grid">
+      <div class="api-card">
+        <span class="api-method get">GET</span>
+        <span class="api-path">/api/model-info</span>
+        <span class="api-desc">Model parameters &amp; metrics</span>
+      </div>
+      <div class="api-card">
+        <span class="api-method get">GET</span>
+        <span class="api-path">/api/training-data</span>
+        <span class="api-desc">All 15 training records</span>
+      </div>
+      <div class="api-card">
+        <span class="api-method post">POST</span>
+        <span class="api-path">/api/predict</span>
+        <span class="api-desc">Predict custom day(s)</span>
+      </div>
+      <div class="api-card">
+        <span class="api-method get">GET</span>
+        <span class="api-path">/api/predict-range</span>
+        <span class="api-desc">Predict a range of days</span>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<footer>
+  <div>AI Weather Prediction &nbsp;·&nbsp; Flask + NumPy + Chart.js &nbsp;·&nbsp; Linear Regression from Scratch</div>
+  <div>Subject Matter Expert: Claude AI by Anthropic</div>
+</footer>
+
+<script src="/static/js/main.js"></script>
+</body>
+</html>
