@@ -95,12 +95,8 @@ http://127.0.0.1:5000
 
 ---
 
-## 🤖 AI Assistance
 
-This project was developed with Claude AI (Anthropic) as the Subject Matter Expert.
-
----
 
 ## 👤 Author
 
-**[Your Name]** — [Your College], [Your Department]
+**[Aryya Manna]** — [Brainware University], [B.TECH CSE (AIML)]
