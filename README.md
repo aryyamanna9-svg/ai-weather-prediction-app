@@ -1,4 +1,4 @@
-# 🌤️ AI Weather Prediction — Full Stack Web App!
+# 🌤️ AI Weather Prediction — Full Stack Web App
 
 > A full-stack web application that predicts temperatures using **Linear Regression** built from scratch. Python Flask backend with REST API + HTML/CSS/JS frontend.
 
